@@ -1,0 +1,148 @@
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #111;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background-color: #111;
+  padding: 50px 60px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 1200px;
+  box-shadow: 0 0 30px rgba(255, 165, 0, 0.2);
+  gap: 50px;
+}
+
+.form-container {
+  flex: 1;
+}
+
+h1 {
+  color: #ffa500;
+  font-size: 42px;
+  margin-bottom: 10px;
+  text-shadow: 1px 1px 4px #000;
+}
+
+h2 {
+  color: #ccc;
+  margin-bottom: 30px;
+  font-size: 28px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  color: #ccc;
+  font-weight: bold;
+}
+
+input {
+  width: 550px; /*100%; valor anterior*/
+  padding: 12px;
+  margin-bottom: 20px;
+  border: 2px solid #ffa500;
+  border-radius: 10px;
+  background-color: #e6950017;
+  color: #fff;
+  font-size: 16px;
+}
+
+input::placeholder {
+  color: #888;
+}
+
+.password-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.password-container input {
+  width: 100%;
+}
+
+.password-container span {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+  color: #ffa500;
+}
+
+button {
+  background-color: #ffa500;
+  color: #000;
+  border: none;
+  padding: 12px 28px;
+  font-size: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: 100%;
+  margin-top: 10px;
+}
+
+button:hover {
+  background-color: #e69500;
+}
+
+.face-scan-button {
+  background-color: #ffa500;
+  padding: 10px 20px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  border-radius: 10px;
+  border: none;
+  width: 460px;/*se agrego para q el tamaños sea independiente*/
+}
+.camera-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;  /* Para alinear el contenido arriba */
+  height: 700px; /* Altura grande para que el contenedor ocupe más espacio */
+  border: 50px solid transparent; /* Opcional, para debug */
+}
+video {
+  border: 4px solid #ffa500;
+  border-radius: 40px;
+  width: 100%;
+  max-width: 450px;  /* Lo hacemos más ancho */
+  height: 800px;     /* Altura fija para que se parezca al área roja */
+  object-fit: cover; /* Para que la cámara no se deforme */
+  background-color: #e6950017;/*el fondo de la camara*/
+}
+
+.note {
+  font-size: 14px;
+  margin-top: 12px;
+  text-align: center;
+  color: #ccc;
+}
+
+.login-link {
+  margin-top: 20px;
+  font-size: 14px;
+  text-align: left;
+}
+
+.login-link a {
+  color: #ffa500;
+  text-decoration: none;
+}
+
+.login-link a:hover {
+  text-decoration: underline;
+}

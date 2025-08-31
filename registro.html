@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Registro - Bookstore</title>
+  <link rel="stylesheet" href="estilos.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+  <script defer src="registro.js"></script>
+  <meta http-equiv=" "    content="http://localhost/login.html">
+
+</head>
+<body>
+  <div class="container">
+    <div class="form-container">
+      <h1>Bookstore</h1>
+      <h2>REGISTRO</h2>
+
+      <form id="registroForm">
+        <label>Nombre:</label>
+        <input type="text" name="nombre" required />
+
+        <label>Apellido:</label>
+        <input type="text" name="apellido" required />
+
+        <label>Teléfono:</label>
+        <input type="text" name="telefono" placeholder="ejm:987654321" required />
+
+        <label>Correo:</label>
+        <input type="email" name="correo" placeholder="example@example.com" required />
+
+        <label>Contraseña:</label>
+        <div class="password-container">
+          <input type="password" name="contrasena" id="password" required />
+          <span onclick="togglePassword()">👁️</span>
+        </div>
+
+        <button type="submit">Registrar</button>
+      </form>
+
+      <p class="login-link">¿Ya tienes cuenta? <a href="login.html">Iniciar sesión</a></p>
+    </div>
+
+    <div class="camera-container">
+      <button class="face-scan-button">Registro facial obligatorio</button>
+      <video id="video" width="320" height="240" autoplay muted></video>
+      <p class="note">*Tus datos biométricos serán guardados automáticamente y cifrados de manera privada.</p>
+    </div>
+  </div>
+</body>
+</html>

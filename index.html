@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Iniciar Sesión - Bookshop</title>
+  <link rel="stylesheet" href="estilos.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+  <script defer src="login.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="form-container">
+      <h1>Bookshop</h1>
+      <h2>Inicio de sesión</h2>
+
+      <button onclick="iniciarEscaneoFacial()">Iniciar escaneo facial</button>
+      <button onclick="mostrarFormulario()">Iniciar con correo y contraseña</button>
+
+      <a href="registro.html">
+        <button>👤 Registrarme</button>
+      </a>
+
+      <form id="manualLoginForm" style="display: none; margin-top: 20px;">
+        <label>Correo:</label>
+        <input type="email" name="correo" required />
+
+        <label>Contraseña:</label>
+        <input type="password" name="contrasena" required />
+
+        <button type="submit">Ingresar</button>
+      </form>
+    </div>
+
+    <div class="camera-container">
+      <video id="video" width="320" height="240" autoplay muted></video>
+      <p class="note">*Vea directamente a la cámara para el escaneo facial.  
+        Si no es posible, use su correo y contraseña.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
