@@ -23,10 +23,6 @@ body {
   gap: 50px;
 }
 
-.form-container {
-  flex: 1;
-}
-
 h1 {
   color: #ffa500;
   font-size: 42px;
