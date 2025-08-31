@@ -106,29 +106,29 @@ button:hover {
   border: none;
   width: 460px;/*se agrego para q el tamaños sea independiente*/
 }
-.camera-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;  /* Para alinear el contenido arriba */
-  height: 700px; /* Altura grande para que el contenedor ocupe más espacio */
-  border: 50px solid transparent; /* Opcional, para debug */
+
+.camera-wrapper {
+	max-width: 530px;
 }
+.camera-wrapper .camera-container {
+	display: flex;
+	justify-content: center;
+	position: relative;
+	overflow: hidden;
+}
+
 video {
   border: 4px solid #ffa500;
   border-radius: 40px;
   width: 100%;
-  max-width: 450px;  /* Lo hacemos más ancho */
   height: 800px;     /* Altura fija para que se parezca al área roja */
   object-fit: cover; /* Para que la cámara no se deforme */
   background-color: #e6950017;/*el fondo de la camara*/
 }
 
 canvas {
-	padding: 0;
-	position: absolute;
-	/*background-color: transparent;*/
+	height: 100%;
+    position: absolute;
 }
 
 .note {
