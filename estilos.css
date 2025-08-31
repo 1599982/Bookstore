@@ -125,6 +125,12 @@ video {
   background-color: #e6950017;/*el fondo de la camara*/
 }
 
+canvas {
+	padding: 0;
+	position: absolute;
+	/*background-color: transparent;*/
+}
+
 .note {
   font-size: 14px;
   margin-top: 12px;
