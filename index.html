@@ -124,6 +124,15 @@
             loginTime: new Date().toISOString()
           }));
           
+          // También guardar en localStorage para persistencia
+          localStorage.setItem('loggedUser', JSON.stringify({
+            correo: userData.correo,
+            nombre: userData.nombre,
+            apellido: userData.apellido,
+            telefono: userData.telefono,
+            loginTime: new Date().toISOString()
+          }));
+          
           window.location.href = "bienvenido.html";
         } else {
           alert('Contraseña incorrecta');

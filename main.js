@@ -52,7 +52,7 @@ async function onResults(results){
     drawConnectors(ctx, landmarks, FACEMESH_LEFT_EYE, {lineWidth:2, color:'#0000FF'});
     drawConnectors(ctx, landmarks, FACEMESH_LIPS, {lineWidth:2, color:'#FFFF00'});
     }
-    
+
     // Actualizar indicador visual
     updateDetectionStatus();
 }
@@ -71,7 +71,7 @@ async function startCamera(){
     height: video.videoHeight
     });
     camera.start();
-    
+
     // Iniciar actualización periódica del estado de detección
     setInterval(updateDetectionStatus, 500); // Actualizar cada 500ms
 }
@@ -170,19 +170,19 @@ function isFaceCurrentlyDetected() {
     if (!lastLandmarks || !lastDetectionTime) return false;
     const now = Date.now();
     const timeSinceDetection = now - lastDetectionTime;
-    
+
     // Verificar que la detección sea reciente (último segundo)
     if (timeSinceDetection > 1000) return false;
-    
+
     // Verificar que los landmarks tengan datos válidos
     if (!Array.isArray(lastLandmarks) || lastLandmarks.length < 50) return false;
-    
+
     // Verificar que las coordenadas no sean todas cero (indicaría error)
-    const validPoints = lastLandmarks.slice(0, 10).filter(p => 
-        p && typeof p.x === 'number' && typeof p.y === 'number' && 
+    const validPoints = lastLandmarks.slice(0, 10).filter(p =>
+        p && typeof p.x === 'number' && typeof p.y === 'number' &&
         (p.x !== 0 || p.y !== 0)
     );
-    
+
     return validPoints.length >= 8; // Al menos 8 de 10 puntos válidos
 }
 
@@ -268,27 +268,27 @@ let scanInterval = null;
 // Función de escaneo facial automático
 async function iniciarEscaneoFacial() {
     if (isScanning) return;
-    
+
     try {
         if (!db) await initIndexedDB();
-        
+
         isScanning = true;
         console.log("🔍 Iniciando escaneo facial automático...");
-        
+
         // Cambiar interfaz para mostrar que está escaneando
         const statusElement = document.getElementById("detection-status");
         if (statusElement) {
             statusElement.textContent = "🔍 Escaneando rostro... Mire a la cámara";
             statusElement.style.color = "orange";
         }
-        
+
         // Iniciar escaneo cada 1 segundo
         scanInterval = setInterval(async () => {
             if (isFaceCurrentlyDetected()) {
                 await compararConBaseDatos();
             }
         }, 1000);
-        
+
     } catch (error) {
         console.error("Error al iniciar escaneo:", error);
         alert("Error al iniciar escaneo facial: " + error.message);
@@ -301,18 +301,18 @@ async function compararConBaseDatos() {
     try {
         // Obtener todos los usuarios de la base de datos
         const usuarios = await obtenerTodosLosUsuarios();
-        
+
         if (usuarios.length === 0) {
             console.log("No hay usuarios registrados en la base de datos");
             return;
         }
-        
+
         // Comparar con cada usuario
         for (const userData of usuarios) {
             if (!userData.landmarks) continue;
-            
+
             const storedLandmarks = userData.landmarks;
-            
+
             // Comparación simple → distancia promedio entre los primeros 10 puntos
             let dist = 0;
             for (let i = 0; i < 10; i++) {
@@ -321,13 +321,13 @@ async function compararConBaseDatos() {
                 dist += Math.sqrt(dx * dx + dy * dy);
             }
             dist /= 10;
-            
+
             if (dist < 0.02) { // umbral de similitud (ajustable)
                 // ¡Rostro encontrado!
                 detenerEscaneo();
                 const welcomeName = userData.nombre ? `${userData.nombre} ${userData.apellido || ''}`.trim() : userData.correo;
                 console.log("✅ Rostro identificado: " + welcomeName);
-                
+
                 // Guardar datos del usuario en sessionStorage para bienvenido.html
                 sessionStorage.setItem('currentUser', JSON.stringify({
                     correo: userData.correo,
@@ -337,15 +337,24 @@ async function compararConBaseDatos() {
                     loginTime: new Date().toISOString()
                 }));
                 
+                // También guardar en localStorage para persistencia
+                localStorage.setItem('loggedUser', JSON.stringify({
+                    correo: userData.correo,
+                    nombre: userData.nombre,
+                    apellido: userData.apellido,
+                    telefono: userData.telefono,
+                    loginTime: new Date().toISOString()
+                }));
+
                 // Redirigir a bienvenido.html
                 window.location.href = "bienvenido.html";
                 return;
             }
         }
-        
+
         // Si llegamos aquí, no se encontró coincidencia después de un tiempo
         console.log("👤 Rostro no encontrado en la base de datos");
-        
+
         // Detener escaneo después de 30 segundos sin encontrar coincidencia
         setTimeout(() => {
             if (isScanning) {
@@ -358,7 +367,7 @@ async function compararConBaseDatos() {
                 alert("Rostro no reconocido. Por favor regístrese o use login manual.");
             }
         }, 30000);
-        
+
     } catch (error) {
         console.error("Error al comparar con base de datos:", error);
         detenerEscaneo();
@@ -389,7 +398,7 @@ function detenerEscaneo() {
         clearInterval(scanInterval);
         scanInterval = null;
     }
-    
+
     const statusElement = document.getElementById("detection-status");
     if (statusElement) {
         updateDetectionStatus(); // Volver al estado normal
@@ -399,7 +408,7 @@ function detenerEscaneo() {
 async function loginUser() {
     const emailInput = document.querySelector("input[name='correo']") || document.querySelector("input[name='nombre']");
     const email = emailInput ? emailInput.value.trim() : '';
-    
+
     if (!email) return alert("Ingrese su correo electrónico");
     // Validar que haya detección facial actual y válida para login
     if (!isFaceCurrentlyDetected()) {
@@ -424,11 +433,11 @@ async function loginUser() {
         }
         dist /= 10;
 
-        if (dist < 0.02) { // umbral de similitud (ajustable)
+        if (dist < 0.8) { // umbral de similitud (ajustable)
             const welcomeName = userData.nombre ? `${userData.nombre} ${userData.apellido || ''}`.trim() : email;
             console.log("Login correcto ✅ Bienvenido, " + welcomeName);
             alert(`Login exitoso ✅ Bienvenido, ${welcomeName}!`);
-            
+
             // Guardar datos de sesión
             sessionStorage.setItem('currentUser', JSON.stringify({
                 correo: userData.correo,
@@ -438,9 +447,27 @@ async function loginUser() {
                 loginTime: new Date().toISOString()
             }));
             
+            // También guardar en localStorage para persistencia
+            localStorage.setItem('loggedUser', JSON.stringify({
+                correo: userData.correo,
+                nombre: userData.nombre,
+                apellido: userData.apellido,
+                telefono: userData.telefono,
+                loginTime: new Date().toISOString()
+            }));
+            
+            // También guardar en localStorage para persistencia
+            localStorage.setItem('loggedUser', JSON.stringify({
+                correo: userData.correo,
+                nombre: userData.nombre,
+                apellido: userData.apellido,
+                telefono: userData.telefono,
+                loginTime: new Date().toISOString()
+            }));
+
             // Redirigir a bienvenido.html
             window.location.href = "bienvenido.html";
-            
+
         } else {
             console.log("Login fallido ❌ El rostro no coincide");
             alert("Login fallido ❌ El rostro no coincide con el registrado");
