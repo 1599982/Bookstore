@@ -54,49 +54,140 @@ async function startCamera(){
     camera.start();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-	startCamera().catch(err => {
-		alert("Error accediendo a la cámara: " + err.message);
-	})
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        await initIndexedDB();
+        console.log("IndexedDB inicializado correctamente");
+        await startCamera();
+    } catch (err) {
+        console.error("Error en la inicialización:", err);
+        alert("Error accediendo a la cámara: " + err.message);
+    }
 })
 
 window.addEventListener('resize', () => { if(video.videoWidth) resizeCanvasToVideo(); });
 
 // -------------------------------
-// Registro/Login en localStorage
+// Configuración de IndexedDB
 // -------------------------------
-function registerUser(){
-	const username = document.querySelector("input[name='nombre']").value.trim();
-    if(!username) return alert("Ingrese un nombre de usuario");
-    if(!lastLandmarks) return alert("No se detectó un rostro");
+const DB_NAME = 'FaceRecognitionDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'faces';
 
-    // Guardar landmarks en localStorage
-    localStorage.setItem("face_" + username, JSON.stringify(lastLandmarks));
-    // statusBox.textContent = "Usuario " + username + " registrado con éxito ✅";
+let db = null;
+
+// Inicializar IndexedDB
+function initIndexedDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+            db = request.result;
+            resolve(db);
+        };
+
+        request.onupgradeneeded = (event) => {
+            const database = event.target.result;
+            if (!database.objectStoreNames.contains(STORE_NAME)) {
+                database.createObjectStore(STORE_NAME, { keyPath: 'username' });
+            }
+        };
+    });
 }
 
-function loginUser(){
-	const username = document.querySelector("input[name='nombre']").value.trim();
-    if(!username) return alert("Ingrese un nombre de usuario");
-    if(!lastLandmarks) return alert("No se detectó un rostro");
+// Guardar datos de rostro en IndexedDB
+function saveFaceData(username, landmarks) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject(new Error('Base de datos no inicializada'));
+            return;
+        }
 
-    const stored = localStorage.getItem("face_" + username);
-    if(!stored) return alert("Usuario no encontrado");
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
 
-    const storedLandmarks = JSON.parse(stored);
+        const data = {
+            username: username,
+            landmarks: landmarks,
+            timestamp: new Date().toISOString()
+        };
 
-    // Comparación simple → distancia promedio entre los primeros 10 puntos
-    let dist = 0;
-    for(let i=0; i<10; i++){
-    const dx = storedLandmarks[i].x - lastLandmarks[i].x;
-    const dy = storedLandmarks[i].y - lastLandmarks[i].y;
-    dist += Math.sqrt(dx*dx + dy*dy);
+        const request = store.put(data);
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+    });
+}
+
+// Obtener datos de rostro de IndexedDB
+function getFaceData(username) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject(new Error('Base de datos no inicializada'));
+            return;
+        }
+
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get(username);
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+    });
+}
+
+// -------------------------------
+// Registro/Login con IndexedDB
+// -------------------------------
+async function registerUser() {
+    const username = document.querySelector("input[name='nombre']").value.trim();
+    if (!username) return alert("Ingrese un nombre de usuario");
+    if (!lastLandmarks) return alert("No se detectó un rostro");
+
+    try {
+        if (!db) await initIndexedDB();
+
+        await saveFaceData(username, lastLandmarks);
+        alert("Usuario " + username + " registrado con éxito ✅");
+        console.log("Usuario registrado exitosamente");
+    } catch (error) {
+        console.error("Error al registrar usuario:", error);
+        alert("Error al registrar usuario: " + error.message);
     }
-    dist /= 10;
+}
 
-    if(dist < 0.02){ // umbral de similitud (ajustable)
-   		console.log("Login correcto ✅ Bienvenido, " + username);
-    } else {
-   		console.log("Login fallido ❌ El rostro no coincide");
+async function loginUser() {
+    const username = document.querySelector("input[name='nombre']").value.trim();
+    if (!username) return alert("Ingrese un nombre de usuario");
+    if (!lastLandmarks) return alert("No se detectó un rostro");
+
+    try {
+        if (!db) await initIndexedDB();
+
+        const userData = await getFaceData(username);
+        if (!userData) return alert("Usuario no encontrado");
+
+        const storedLandmarks = userData.landmarks;
+
+        // Comparación simple → distancia promedio entre los primeros 10 puntos
+        let dist = 0;
+        for (let i = 0; i < 10; i++) {
+            const dx = storedLandmarks[i].x - lastLandmarks[i].x;
+            const dy = storedLandmarks[i].y - lastLandmarks[i].y;
+            dist += Math.sqrt(dx * dx + dy * dy);
+        }
+        dist /= 10;
+
+        if (dist < 0.02) { // umbral de similitud (ajustable)
+            console.log("Login correcto ✅ Bienvenido, " + username);
+            alert("Login exitoso ✅ Bienvenido, " + username);
+        } else {
+            console.log("Login fallido ❌ El rostro no coincide");
+            alert("Login fallido ❌ El rostro no coincide");
+        }
+    } catch (error) {
+        console.error("Error al hacer login:", error);
+        alert("Error al hacer login: " + error.message);
     }
 }
