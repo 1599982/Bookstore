@@ -40,7 +40,7 @@
           <span onclick="togglePassword()">👁️</span>
         </div>
 
-        <button type="submit">Registrar</button>
+        <button id="register" type="button" onclick="registerUser()">Registrar</button>
       </form>
 
       <p class="login-link">¿Ya tienes cuenta? <a href="index.html">Iniciar sesión</a></p>
@@ -54,5 +54,21 @@
 		    <p class="note">*Vea directamente a la cámara para el escaneo facial. Si no es posible, use su correo y contraseña.</p>
 		</div>
   </div>
+
+  <script>
+    // Función para mostrar/ocultar contraseña
+    function togglePassword() {
+      const passwordField = document.getElementById("password");
+      const eyeIcon = passwordField.nextElementSibling;
+      
+      if (passwordField.type === "password") {
+        passwordField.type = "text";
+        eyeIcon.textContent = "🙈";
+      } else {
+        passwordField.type = "password";
+        eyeIcon.textContent = "👁️";
+      }
+    }
+  </script>
 </body>
 </html>
