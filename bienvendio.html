@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bookshop — Bienvenida</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .frame{
+      width:min(1100px, 100%);
+      min-height:560px;
+      border:3px solid #ffa60000;
+      border-radius:12px;
+      padding:26px;
+      background: linear-gradient(74deg, #222, #111);
+      padding: 205px 107px;
+      box-shadow: 0 0 30px rgba(255, 165, 0, 0.2);
+    }
+
+    .header{ display:flex; align-items:center; gap:12px; padding:0 10px 30px 6px; }
+    .brand{ font-weight:700; font-size:42px; color:#ffa500; text-shadow:1px 1px 4px #000; }
+
+    .content{ display:grid; grid-template-columns: 380px 1fr; gap:30px; height:calc(100% - 68px); }
+
+    .card{
+      background: rgb(44 32 6 / 20%);
+      border-radius: 10px;
+      box-shadow: 0 0 30px rgba(255, 165, 0, 0.2);
+      padding:18px 20px 22px;
+      border:5px solid rgba(255, 174, 0, 0.993);
+    }
+    .card h3{ margin:0 0 14px; font-size:28px; color:#ffa500; }
+
+    .info-list{ list-style:none; margin:6px 0 0; padding:0; }
+    .info-list li{ display:flex; flex-direction:column; margin-bottom:12px; }
+    .info-list label{ font-size:14px; color:#ccc; margin-bottom:4px; font-weight:bold; }
+    .info-list input{
+      padding:12px;
+      border-radius:10px;
+      border:2px solid #ffa500;
+      background-color:#e6950017;
+      color:#fff;
+      font-size:16px;
+    }
+    .info-list input:focus{ outline:2px solid #ffa500; }
+
+    .panel{
+      background: rgb(44 32 6 / 20%);
+      border-radius: 10px;
+      border:1px solid rgba(255,255,255,.06);
+      box-shadow: 0 0 30px rgba(255, 165, 0, 0.2);
+      padding:28px 30px 40px;
+      position:relative;
+      border: 5px solid #ffa500;
+    }
+
+    .welcome h1{ margin:0 0 6px; font-weight:600; font-size:50px; color:#ffa500; }
+    .welcome h2{ margin:0; font-weight:300; font-size:22px; color:#ccc; }
+    .date{ margin-top:18px; font-weight:700; color:#fff; }
+
+    .actions{ position:absolute; right:30px; bottom:30px; }
+    .btn{
+      background-color: #ffa500;
+      color:#000;
+      padding:15px 30px;
+      border-radius:5px;
+      font-weight:700;
+      border:none;
+      cursor:pointer;
+      transition: background-color 0.3s ease;
+    }
+    .btn:hover{ background-color:#e69500; }
+  </style>
+</head>
+<body>
+  <main class="frame">
+    <div class="header">
+      <div class="brand">Bookshop</div>
+    </div>
+
+    <section class="content">
+      <aside class="card">
+        <h3>Información</h3>
+        <ul class="info-list">
+          <li><label for="nombre">Nombre:</label><input type="text" id="nombre"></li>
+          <li><label for="apellidos">Apellidos:</label><input type="text" id="apellidos"></li>
+          <li><label for="telefono">Teléfono:</label><input type="text" id="telefono"></li>
+          <!--<li><label for="edad">Edad:</label><input type="number" id="edad"></li>-->
+          <!--<li><label for="distrito">Distrito:</label><input type="text" id="distrito"></li>-->
+          <!--<li><label for="dni">DNI:</label><input type="text" id="dni"></li>-->
+          <li><label for="ingreso">Ingreso:</label><input type="date" id="ingreso"></li>
+          <!--<li><label for="nivel">Nivel Acad.:</label><input type="text" id="nivel"></li>-->
+          <!--<li><label for="direccion">Dirección:</label><input type="text" id="direccion"></li>-->
+        </ul>
+      </aside>
+
+      <section class="panel">
+        <div class="welcome">
+          <h1>BIENVENIDO</h1>
+          <h2 id="welcome-name">(NOMBRE DEL USUARIO)</h2>
+          <div class="date" id="today">00/00/00</div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="btn-ingresar">Ingresar</button>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    function formatDate(d){
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const yy = String(d.getFullYear()).slice(-2);
+      return `${dd}/${mm}/${yy}`;
+    }
+    document.getElementById('today').textContent = formatDate(new Date());
+
+    const nombreInput = document.getElementById('nombre');
+    const welcomeName = document.getElementById('welcome-name');
+    nombreInput.addEventListener('input', () => {
+      welcomeName.textContent = nombreInput.value || '(NOMBRE DEL USUARIO)';
+    });
+
+    document.getElementById('btn-ingresar').addEventListener('click', () => {
+      alert('Ingresaste a Bookshop. Aquí puedes redirigir a tu dashboard.');
+    });
+  </script>
+</body>
+</html>

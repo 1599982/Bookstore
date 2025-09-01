@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Bookshop</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+
+    header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:20px 40px;
+      background: linear-gradient(74deg, #222, #111);
+      box-shadow: 0 0 30px rgba(255, 165, 0, 0.2);
+    }
+    header h1 {
+      font-weight: 700;
+      font-size: 42px;
+      color: #ffa500;
+      text-shadow: 1px 1px 4px #000;
+      margin: 0;
+    }
+    nav a {
+      color: #ffa500;
+      margin-left: 25px;
+      font-weight: bold;
+      text-decoration: none;
+      font-size: 18px;
+    }
+
+    main { 
+      padding:40px;
+      display:flex;
+      justify-content:center;
+    }
+
+    /* Contenedor con scroll */
+    .table-container {
+      max-height: 400px;   /* altura máxima del cuadro */
+      overflow-y: auto;    /* scroll solo dentro del cuadro */
+      width: 100%;
+      max-width: 1000px;
+      border: 5px solid rgba(255, 174, 0, 0.7);
+      border-radius: 12px;
+      box-shadow: 0 0 30px rgba(255, 165, 0, 0.2);
+    }
+
+    table { 
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td { 
+      padding: 12px;
+      text-align: center; 
+    }
+    th { 
+      background: #222; 
+      color: #ffa500;
+      font-weight: bold;
+      font-size: 16px;
+      position: sticky;  /* encabezado fijo */
+      top: 0;
+      z-index: 1;
+    }
+    tr:nth-child(even) { background: rgba(44, 32, 6, 0.2); }
+    tr:nth-child(odd) { background: rgba(255, 174, 0, 0.05); }
+    td { color: #fff; }
+
+    /* Modal */
+    .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; }
+    .modal-content { background:#222; padding:20px; border-radius:10px; width:80%; box-shadow:0 0 30px rgba(255,165,0,0.3); }
+    .close { float:right; cursor:pointer; color:#ffa500; font-weight:bold; font-size:24px; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Bookshop</h1>
+  <nav>
+    <a href="#">Predicciones</a>
+    <a href="#" id="btnModal">Grafico estadísticos</a>
+    <a href="#">Cuenta</a>
+  </nav>
+</header>
+
+<main>
+  <!-- Contenedor con scroll -->
+  <div class="table-container">
+    <table id="tabla">
+      <thead>
+        <tr>
+          <th>Mes</th><th>Año</th><th>Título</th><th>Precio</th><th>Marketing</th><th>Ventas</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- Modal con gráfico -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <span class="close" id="close">&times;</span>
+    <h2 style="color:#ffa500;">Comparación Precio, Marketing y Ventas</h2>
+    <canvas id="grafico"></canvas>
+  </div>
+</div>
+
+<script>
+const tbody = document.querySelector('#tabla tbody');
+let resumen = {};
+
+// Leer CSV desde la misma carpeta
+Papa.parse("ventas_libros.csv", {
+  download: true,
+  header: true,
+  complete: function(results) {
+    const data = results.data;
+    tbody.innerHTML = '';
+    resumen = {};
+
+    data.forEach(row=>{
+      if(!row.titulo) return;  // si la fila está vacía, la ignora
+      // Agregar fila a la tabla
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.mes}</td>
+        <td>${row.año}</td>
+        <td>${row.titulo}</td>
+        <td>${row.precio}</td>
+        <td>${row.marketing}</td>
+        <td>${row.ventas}</td>`;
+      tbody.appendChild(tr);
+
+      // Agrupar datos por título
+      if(!resumen[row.titulo]){
+        resumen[row.titulo] = {precio:0, marketing:0, ventas:0, count:0};
+      }
+      resumen[row.titulo].precio += parseFloat(row.precio);
+      resumen[row.titulo].marketing += parseFloat(row.marketing);
+      resumen[row.titulo].ventas += parseFloat(row.ventas);
+      resumen[row.titulo].count += 1;
+    });
+  }
+});
+
+// Modal con gráfico
+const modal=document.getElementById('modal');
+const graficoCanvas=document.getElementById('grafico');
+let chart;
+
+document.getElementById('btnModal').onclick=()=>{
+  modal.style.display='flex';
+  if(chart){ chart.destroy(); }
+
+  const titulos = Object.keys(resumen);
+  const precios = titulos.map(t=> resumen[t].precio / resumen[t].count);
+  const marketing = titulos.map(t=> resumen[t].marketing / resumen[t].count);
+  const ventas = titulos.map(t=> resumen[t].ventas);
+
+  chart = new Chart(graficoCanvas, {
+    type: 'bar',
+    data: {
+      labels: titulos,
+      datasets: [
+        { label:'Precio (promedio)', data: precios, backgroundColor:'#f39c12' },
+        { label:'Marketing (promedio)', data: marketing, backgroundColor:'#2980b9' },
+        { label:'Ventas (total)', data: ventas, backgroundColor:'#27ae60' }
+      ]
+    },
+    options: {
+      responsive:true,
+      plugins:{legend:{labels:{color:'#ffa500'}}},
+      scales:{
+        x:{ticks:{color:'#ffa500'}},
+        y:{ticks:{color:'#ffa500'}}
+      }
+    }
+  });
+};
+
+document.getElementById('close').onclick=()=>{modal.style.display='none';};
+window.onclick=e=>{if(e.target==modal) modal.style.display='none';};
+</script>
+</body>
+</html>

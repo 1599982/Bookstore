@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bookshop</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .frame {
+      width: min(1100px, 100%);
+      min-height: 560px;
+      border-radius: 12px;
+      padding: 26px;
+      background: linear-gradient(74deg, #222, #111);
+      box-shadow: 0 0 30px rgba(255, 165, 0, 0.2);
+      position: relative; /* necesario para posicionar el botón */
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header { 
+      display: flex; 
+      align-items: center; 
+      gap: 12px; 
+      padding: 0 10px 30px 6px; 
+      width: 100%;
+    }
+    .brand { 
+      font-weight: 700; 
+      font-size: 42px; 
+      color: #ffa500; 
+      text-shadow: 1px 1px 4px #000; 
+    }
+
+    .content { 
+      display: flex; 
+      justify-content: flex-start; /* 👈 esto lo manda a la izquierda */
+      width: 100%;
+    }
+
+    .card {
+      width: 50%; /* ocupa solo la mitad */
+      background: rgb(44 32 6 / 20%);
+      border-radius: 10px;
+      box-shadow: 0 0 30px rgba(255, 165, 0, 0.2);
+      padding: 18px 20px 22px;
+      border: 5px solid rgba(255, 174, 0, 0.993);
+    }
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 28px;
+      color: #ffa500;
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    td {
+      padding: 10px;
+      color: white;
+      border: none;
+    }
+
+    td:first-child {
+      width: 150px;
+      font-weight: bold;
+      color: #ccc;
+    }
+
+    input {
+      width: 95%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 2px solid #ffa500;
+      background-color: #e6950017;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    input:focus {
+      outline: 2px solid #ffa500;
+    }
+
+    /* Botón cerrar sesión centrado a la derecha */
+    .btn {
+      position: absolute;
+      top: 50%;
+      right: 30px;
+      transform: translateY(-50%);
+      background-color: #111;
+      color:#ffa500;
+      padding: 15px 30px;
+      border-radius: 5px;
+      font-weight: 700;
+      border: 3px solid rgba(255, 174, 0, 0.993);
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .btn:hover { 
+      background-color: #e69500; 
+    }
+  </style>
+</head>
+<body>
+
+  <div class="frame">
+    <div class="header">
+      <div class="brand">Bookshop</div>
+    </div>
+
+    <!-- Botón cerrar sesión al centro a la derecha -->
+    <button class="btn">Cerrar Sesión</button>
+
+    <div class="content">
+      <!-- Tarjeta con tabla -->
+      <div class="card">
+        <h2>Información</h2>
+        <table>
+          <tr><td>Nombre</td><td><input type="text"></td></tr>
+          <tr><td>Apellido</td><td><input type="text"></td></tr>
+          <tr><td>Teléfono</td><td><input type="tel"></td></tr>
+          <tr><td>Edad</td><td><input type="number" ></td></tr>
+          <tr><td>Distrito</td><td><input type="text"></td></tr>
+          <tr><td>DNI</td><td><input type="text" ></td></tr>
+          <tr><td>Ingreso</td><td><input type="number" ></td></tr>
+          <tr><td>Nivel Académico</td><td><input type="text" ></td></tr>
+          <tr><td>Dirección</td><td><input type="text" ></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -45,6 +45,27 @@
             </div>
             <p class="note">*Vea directamente a la cámara para el escaneo facial. Si no es posible, use su correo y contraseña.</p>
         </div>
+        <!-- Segunda pantalla: formulario de correo (inicialmente oculto) -->
+      <div id="emailLoginScreen" style="display: none;">
+        <form id="manualLoginForm">
+          <div class="input-group">
+            <label>Correo:</label>
+            <input type="email" name="correo" required placeholder="example@example.com" />
+            <div class="input-note">Consejo/Inicio Con</div>
+          </div>
+
+          <div class="input-group">
+            <label>Contraseña:</label>
+            <input type="password" name="contrasena" required />
+            <div class="input-note">Ingresa tu contraseña</div>
+          </div>
+
+          <div class="button-group">
+            <button type="button" class="btn-back" onclick="goBackToSelection()">Volver</button>
+            <button type="submit" class="btn-login">Iniciar Sesión</button>
+          </div>
+        </form>
+      </div>
   </div>
 </body>
 </html>
