@@ -89,6 +89,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 window.addEventListener('resize', () => { if(video.videoWidth) resizeCanvasToVideo(); });
 
+// Función para capturar foto del frame actual del video
+function capturarFotoActual() {
+    if (!video || !video.videoWidth || !video.videoHeight) return null;
+    
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = video.videoWidth;
+    tempCanvas.height = video.videoHeight;
+    const tempCtx = tempCanvas.getContext('2d');
+    
+    // Dibujar el frame actual del video
+    tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+    
+    // Convertir a base64
+    return tempCanvas.toDataURL('image/jpeg', 0.8);
+}
+
 // -------------------------------
 // Configuración de IndexedDB
 // -------------------------------
@@ -229,6 +245,9 @@ async function registerUser() {
             return alert("Ya existe un usuario registrado con este correo electrónico");
         }
 
+        // Capturar foto del último frame
+        const fotoRegistro = capturarFotoActual();
+        
         // Preparar datos completos del usuario incluyendo landmarks
         const fechaRegistro = new Date();
         const completeUserData = {
@@ -238,6 +257,7 @@ async function registerUser() {
             correo: correo,
             contrasena: contrasena, // En producción, esto debería estar hasheado
             landmarks: lastLandmarks,
+            fotoRegistro: fotoRegistro,
             fechaRegistro: fechaRegistro.toISOString(),
             fechaRegistroFormateada: fechaRegistro.toLocaleString('es-ES', {
                 year: 'numeric',
@@ -344,6 +364,7 @@ async function compararConBaseDatos() {
                     nombre: userData.nombre,
                     apellido: userData.apellido,
                     telefono: userData.telefono,
+                    fotoRegistro: userData.fotoRegistro,
                     fechaRegistro: userData.fechaRegistro,
                     fechaRegistroFormateada: userData.fechaRegistroFormateada,
                     loginTime: new Date().toISOString()
@@ -355,6 +376,7 @@ async function compararConBaseDatos() {
                     nombre: userData.nombre,
                     apellido: userData.apellido,
                     telefono: userData.telefono,
+                    fotoRegistro: userData.fotoRegistro,
                     fechaRegistro: userData.fechaRegistro,
                     fechaRegistroFormateada: userData.fechaRegistroFormateada,
                     loginTime: new Date().toISOString()
@@ -458,6 +480,7 @@ async function loginUser() {
                 nombre: userData.nombre,
                 apellido: userData.apellido,
                 telefono: userData.telefono,
+                fotoRegistro: userData.fotoRegistro,
                 fechaRegistro: userData.fechaRegistro,
                 fechaRegistroFormateada: userData.fechaRegistroFormateada,
                 loginTime: new Date().toISOString()
@@ -469,6 +492,7 @@ async function loginUser() {
                 nombre: userData.nombre,
                 apellido: userData.apellido,
                 telefono: userData.telefono,
+                fotoRegistro: userData.fotoRegistro,
                 fechaRegistro: userData.fechaRegistro,
                 fechaRegistroFormateada: userData.fechaRegistroFormateada,
                 loginTime: new Date().toISOString()

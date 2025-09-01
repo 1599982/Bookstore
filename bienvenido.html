@@ -121,9 +121,9 @@
         <div class="welcome">
           <h1>BIENVENIDO</h1>
           <h2 id="welcome-name">(NOMBRE DEL USUARIO)</h2>
-          <div class="date" id="today">00/00/00</div>
-          <div class="date" id="tiempo-registro" style="font-size: 14px; color: #ccc; margin-top: 10px;">
-            Usuario desde: --
+          <div class="user-photo-container" style="margin-top: 20px; text-align: center;">
+            <canvas id="user-photo" width="200" height="150" style="width: 260px; border: 3px solid #ffa500; border-radius: 12px; background: #222; box-shadow: 0 5px 15px rgba(255, 165, 0, 0.3);"></canvas>
+            <p style="font-size: 14px; color: #ffa500; margin: 8px 0 0 0; text-align: center; font-weight: 600;">📸 Foto de Registro</p>
           </div>
         </div>
         <div class="actions">
@@ -139,6 +139,92 @@
       const mm = String(d.getMonth()+1).padStart(2,'0');
       const yy = String(d.getFullYear()).slice(-2);
       return `${dd}/${mm}/${yy}`;
+    }
+
+    // Función para mostrar la foto del usuario desde los datos guardados
+    function mostrarFotoUsuario(userData) {
+      const canvas = document.getElementById('user-photo');
+      const ctx = canvas.getContext('2d');
+
+      // Limpiar canvas con fondo oscuro
+      ctx.fillStyle = '#222';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      if (userData.fotoRegistro) {
+        const img = new Image();
+        img.onload = function() {
+          try {
+            // Limpiar canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#222';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Calcular dimensiones para mantener aspecto y centrar
+            const imgAspect = img.width / img.height;
+            const canvasAspect = canvas.width / canvas.height;
+
+            let drawWidth, drawHeight, drawX, drawY;
+
+            if (imgAspect > canvasAspect) {
+              // La imagen es más ancha, ajustar por altura
+              drawHeight = canvas.height;
+              drawWidth = drawHeight * imgAspect;
+              drawX = (canvas.width - drawWidth) / 2;
+              drawY = 0;
+            } else {
+              // La imagen es más alta, ajustar por ancho
+              drawWidth = canvas.width;
+              drawHeight = drawWidth / imgAspect;
+              drawX = 0;
+              drawY = (canvas.height - drawHeight) / 2;
+            }
+
+            // Dibujar imagen centrada y escalada
+            ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+
+            // Agregar borde interno sutil
+            ctx.strokeStyle = 'rgba(255, 165, 0, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+
+          } catch (error) {
+            console.error('Error al cargar imagen:', error);
+            mostrarPlaceholder(ctx, canvas, 'Error al cargar foto');
+          }
+        };
+
+        img.onerror = function() {
+          console.error('Error al cargar imagen de registro');
+          mostrarPlaceholder(ctx, canvas, 'Error al cargar foto');
+        };
+
+        img.src = userData.fotoRegistro;
+      } else {
+        // Si no hay foto, mostrar placeholder
+        mostrarPlaceholder(ctx, canvas, 'Sin foto de registro');
+      }
+    }
+
+    // Función helper para mostrar placeholder
+    function mostrarPlaceholder(ctx, canvas, mensaje) {
+      ctx.fillStyle = '#333';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Icono de cámara
+      ctx.fillStyle = '#666';
+      ctx.font = '40px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('📷', canvas.width/2, canvas.height/2 - 20);
+
+      // Texto del mensaje
+      ctx.fillStyle = '#ffa500';
+      ctx.font = '14px Arial';
+      ctx.fillText(mensaje, canvas.width/2, canvas.height/2 + 15);
+
+      // Borde
+      ctx.strokeStyle = 'rgba(255, 165, 0, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
     }
 
     // Cargar datos del usuario desde sessionStorage
@@ -176,29 +262,8 @@
           document.getElementById('fechaRegistro').value = 'No disponible';
         }
 
-        // Calcular y mostrar tiempo desde registro
-        if (user.fechaRegistro) {
-          const fechaReg = new Date(user.fechaRegistro);
-          const ahora = new Date();
-          const tiempoTranscurrido = ahora - fechaReg;
-
-          const dias = Math.floor(tiempoTranscurrido / (1000 * 60 * 60 * 24));
-          const horas = Math.floor((tiempoTranscurrido % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-          const minutos = Math.floor((tiempoTranscurrido % (1000 * 60 * 60)) / (1000 * 60));
-
-          let tiempoTexto = '';
-          if (dias > 0) {
-            tiempoTexto = `${dias} día${dias > 1 ? 's' : ''}`;
-          } else if (horas > 0) {
-            tiempoTexto = `${horas} hora${horas > 1 ? 's' : ''}`;
-          } else {
-            tiempoTexto = `${minutos} minuto${minutos > 1 ? 's' : ''}`;
-          }
-
-          document.getElementById('tiempo-registro').textContent = `Usuario desde: ${tiempoTexto}`;
-        } else {
-          document.getElementById('tiempo-registro').textContent = 'Usuario desde: --';
-        }
+        // Mostrar foto del usuario
+        mostrarFotoUsuario(user);
 
         // Actualizar nombre de bienvenida
         const welcomeName = document.getElementById('welcome-name');
@@ -218,7 +283,6 @@
 
     // Inicializar página
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('today').textContent = formatDate(new Date());
       cargarDatosUsuario();
     });
 
