@@ -261,10 +261,145 @@ async function registerUser() {
     }
 }
 
+// Variables para escaneo facial automático
+let isScanning = false;
+let scanInterval = null;
+
+// Función de escaneo facial automático
+async function iniciarEscaneoFacial() {
+    if (isScanning) return;
+    
+    try {
+        if (!db) await initIndexedDB();
+        
+        isScanning = true;
+        console.log("🔍 Iniciando escaneo facial automático...");
+        
+        // Cambiar interfaz para mostrar que está escaneando
+        const statusElement = document.getElementById("detection-status");
+        if (statusElement) {
+            statusElement.textContent = "🔍 Escaneando rostro... Mire a la cámara";
+            statusElement.style.color = "orange";
+        }
+        
+        // Iniciar escaneo cada 1 segundo
+        scanInterval = setInterval(async () => {
+            if (isFaceCurrentlyDetected()) {
+                await compararConBaseDatos();
+            }
+        }, 1000);
+        
+    } catch (error) {
+        console.error("Error al iniciar escaneo:", error);
+        alert("Error al iniciar escaneo facial: " + error.message);
+        detenerEscaneo();
+    }
+}
+
+// Función para comparar rostro actual con todos los usuarios en la base de datos
+async function compararConBaseDatos() {
+    try {
+        // Obtener todos los usuarios de la base de datos
+        const usuarios = await obtenerTodosLosUsuarios();
+        
+        if (usuarios.length === 0) {
+            console.log("No hay usuarios registrados en la base de datos");
+            return;
+        }
+        
+        // Comparar con cada usuario
+        for (const userData of usuarios) {
+            if (!userData.landmarks) continue;
+            
+            const storedLandmarks = userData.landmarks;
+            
+            // Comparación simple → distancia promedio entre los primeros 10 puntos
+            let dist = 0;
+            for (let i = 0; i < 10; i++) {
+                const dx = storedLandmarks[i].x - lastLandmarks[i].x;
+                const dy = storedLandmarks[i].y - lastLandmarks[i].y;
+                dist += Math.sqrt(dx * dx + dy * dy);
+            }
+            dist /= 10;
+            
+            if (dist < 0.02) { // umbral de similitud (ajustable)
+                // ¡Rostro encontrado!
+                detenerEscaneo();
+                const welcomeName = userData.nombre ? `${userData.nombre} ${userData.apellido || ''}`.trim() : userData.correo;
+                console.log("✅ Rostro identificado: " + welcomeName);
+                
+                // Guardar datos del usuario en sessionStorage para bienvenido.html
+                sessionStorage.setItem('currentUser', JSON.stringify({
+                    correo: userData.correo,
+                    nombre: userData.nombre,
+                    apellido: userData.apellido,
+                    telefono: userData.telefono,
+                    loginTime: new Date().toISOString()
+                }));
+                
+                // Redirigir a bienvenido.html
+                window.location.href = "bienvenido.html";
+                return;
+            }
+        }
+        
+        // Si llegamos aquí, no se encontró coincidencia después de un tiempo
+        console.log("👤 Rostro no encontrado en la base de datos");
+        
+        // Detener escaneo después de 30 segundos sin encontrar coincidencia
+        setTimeout(() => {
+            if (isScanning) {
+                detenerEscaneo();
+                const statusElement = document.getElementById("detection-status");
+                if (statusElement) {
+                    statusElement.textContent = "⏰ Escaneo finalizado - Rostro no reconocido";
+                    statusElement.style.color = "red";
+                }
+                alert("Rostro no reconocido. Por favor regístrese o use login manual.");
+            }
+        }, 30000);
+        
+    } catch (error) {
+        console.error("Error al comparar con base de datos:", error);
+        detenerEscaneo();
+    }
+}
+
+// Función para obtener todos los usuarios de IndexedDB
+function obtenerTodosLosUsuarios() {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject(new Error('Base de datos no inicializada'));
+            return;
+        }
+
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.getAll();
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result || []);
+    });
+}
+
+// Función para detener el escaneo
+function detenerEscaneo() {
+    isScanning = false;
+    if (scanInterval) {
+        clearInterval(scanInterval);
+        scanInterval = null;
+    }
+    
+    const statusElement = document.getElementById("detection-status");
+    if (statusElement) {
+        updateDetectionStatus(); // Volver al estado normal
+    }
+}
+
 async function loginUser() {
     const emailInput = document.querySelector("input[name='correo']") || document.querySelector("input[name='nombre']");
     const email = emailInput ? emailInput.value.trim() : '';
-
+    
     if (!email) return alert("Ingrese su correo electrónico");
     // Validar que haya detección facial actual y válida para login
     if (!isFaceCurrentlyDetected()) {
@@ -293,7 +428,7 @@ async function loginUser() {
             const welcomeName = userData.nombre ? `${userData.nombre} ${userData.apellido || ''}`.trim() : email;
             console.log("Login correcto ✅ Bienvenido, " + welcomeName);
             alert(`Login exitoso ✅ Bienvenido, ${welcomeName}!`);
-
+            
             // Guardar datos de sesión
             sessionStorage.setItem('currentUser', JSON.stringify({
                 correo: userData.correo,
@@ -302,10 +437,10 @@ async function loginUser() {
                 telefono: userData.telefono,
                 loginTime: new Date().toISOString()
             }));
-
-            // Opcional: redirigir a página principal
-            // window.location.href = "dashboard.html";
-
+            
+            // Redirigir a bienvenido.html
+            window.location.href = "bienvenido.html";
+            
         } else {
             console.log("Login fallido ❌ El rostro no coincide");
             alert("Login fallido ❌ El rostro no coincide con el registrado");

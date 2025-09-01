@@ -96,13 +96,13 @@
       <aside class="card">
         <h3>Información</h3>
         <ul class="info-list">
-          <li><label for="nombre">Nombre:</label><input type="text" id="nombre"></li>
-          <li><label for="apellidos">Apellidos:</label><input type="text" id="apellidos"></li>
-          <li><label for="telefono">Teléfono:</label><input type="text" id="telefono"></li>
+          <li><label for="nombre">Nombre:</label><input type="text" id="nombre" disabled></li>
+          <li><label for="apellidos">Apellidos:</label><input type="text" id="apellidos" disabled></li>
+          <li><label for="telefono">Teléfono:</label><input type="text" id="telefono" disabled></li>
           <!--<li><label for="edad">Edad:</label><input type="number" id="edad"></li>-->
           <!--<li><label for="distrito">Distrito:</label><input type="text" id="distrito"></li>-->
           <!--<li><label for="dni">DNI:</label><input type="text" id="dni"></li>-->
-          <li><label for="ingreso">Ingreso:</label><input type="date" id="ingreso"></li>
+          <li><label for="ingreso">Ingreso:</label><input type="date" id="ingreso" disabled></li>
           <!--<li><label for="nivel">Nivel Acad.:</label><input type="text" id="nivel"></li>-->
           <!--<li><label for="direccion">Dirección:</label><input type="text" id="direccion"></li>-->
         </ul>
@@ -115,7 +115,7 @@
           <div class="date" id="today">00/00/00</div>
         </div>
         <div class="actions">
-          <button class="btn" id="btn-ingresar">Ingresar</button>
+          <a class="btn" id="btn-ingresar" href="informacion/ventas.html">Ingresar</a>
         </div>
       </section>
     </section>
@@ -128,16 +128,68 @@
       const yy = String(d.getFullYear()).slice(-2);
       return `${dd}/${mm}/${yy}`;
     }
-    document.getElementById('today').textContent = formatDate(new Date());
+
+    // Cargar datos del usuario desde sessionStorage
+    function cargarDatosUsuario() {
+      const userData = sessionStorage.getItem('currentUser');
+
+      if (!userData) {
+        alert('No hay datos de usuario. Redirigiendo al login...');
+        window.location.href = 'index.html';
+        return;
+      }
+
+      try {
+        const user = JSON.parse(userData);
+
+        // Llenar los inputs con los datos del usuario
+        document.getElementById('nombre').value = user.nombre || '';
+        document.getElementById('apellidos').value = user.apellido || '';
+        document.getElementById('telefono').value = user.telefono || '';
+
+        // Establecer fecha de ingreso como hoy
+        const today = new Date();
+        document.getElementById('ingreso').value = today.toISOString().split('T')[0];
+
+        // Actualizar nombre de bienvenida
+        const welcomeName = document.getElementById('welcome-name');
+        const fullName = user.nombre && user.apellido
+          ? `${user.nombre} ${user.apellido}`.toUpperCase()
+          : (user.nombre || user.correo || '(USUARIO)').toUpperCase();
+        welcomeName.textContent = fullName;
+
+        console.log('Datos de usuario cargados:', user);
+
+      } catch (error) {
+        console.error('Error al cargar datos de usuario:', error);
+        alert('Error al cargar datos de usuario');
+        window.location.href = 'index.html';
+      }
+    }
+
+    // Inicializar página
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('today').textContent = formatDate(new Date());
+      cargarDatosUsuario();
+    });
 
     const nombreInput = document.getElementById('nombre');
     const welcomeName = document.getElementById('welcome-name');
     nombreInput.addEventListener('input', () => {
-      welcomeName.textContent = nombreInput.value || '(NOMBRE DEL USUARIO)';
+      const apellidoValue = document.getElementById('apellidos').value;
+      const fullName = nombreInput.value && apellidoValue
+        ? `${nombreInput.value} ${apellidoValue}`.toUpperCase()
+        : (nombreInput.value || '(NOMBRE DEL USUARIO)').toUpperCase();
+      welcomeName.textContent = fullName;
     });
 
-    document.getElementById('btn-ingresar').addEventListener('click', () => {
-      alert('Ingresaste a Bookshop. Aquí puedes redirigir a tu dashboard.');
+    document.getElementById('apellidos').addEventListener('input', () => {
+      const nombreValue = document.getElementById('nombre').value;
+      const apellidoValue = document.getElementById('apellidos').value;
+      const fullName = nombreValue && apellidoValue
+        ? `${nombreValue} ${apellidoValue}`.toUpperCase()
+        : (nombreValue || '(NOMBRE DEL USUARIO)').toUpperCase();
+      welcomeName.textContent = fullName;
     });
   </script>
 </body>

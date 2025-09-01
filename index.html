@@ -43,6 +43,9 @@
                 <video id="video" width="320" height="240" autoplay muted></video>
                 <canvas id="overlay"></canvas>
             </div>
+  		    <div id="detection-status" style="text-align: center; font-weight: bold; margin: 10px 0; font-size: 16px;">
+		        ⏳ Iniciando detección...
+		    </div>
             <p class="note">*Vea directamente a la cámara para el escaneo facial. Si no es posible, use su correo y contraseña.</p>
         </div>
         <!-- Segunda pantalla: formulario de correo (inicialmente oculto) -->
@@ -67,5 +70,70 @@
         </form>
       </div>
   </div>
+
+  <script>
+    // Función para iniciar escaneo facial (ya implementada en main.js)
+    function iniciarEscaneoFacial() {
+      // La función está implementada en main.js
+      console.log("Iniciando escaneo facial...");
+    }
+
+    // Función para mostrar formulario manual
+    function mostrarFormulario() {
+      document.querySelector('.form-container').style.display = 'none';
+      document.querySelector('.camera-wrapper').style.display = 'none';
+      document.getElementById('emailLoginScreen').style.display = 'block';
+    }
+
+    // Función para volver a la selección inicial
+    function goBackToSelection() {
+      document.querySelector('.form-container').style.display = 'block';
+      document.querySelector('.camera-wrapper').style.display = 'block';
+      document.getElementById('emailLoginScreen').style.display = 'none';
+    }
+
+    // Manejar login manual con formulario
+    document.getElementById('emailLoginScreen').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const correo = formData.get('correo').trim();
+      const contrasena = formData.get('contrasena').trim();
+      
+      if (!correo || !contrasena) {
+        alert('Por favor complete todos los campos');
+        return;
+      }
+      
+      try {
+        if (!db) await initIndexedDB();
+        
+        const userData = await getFaceData(correo);
+        if (!userData) {
+          alert('Usuario no encontrado');
+          return;
+        }
+        
+        if (userData.contrasena === contrasena) {
+          // Login exitoso
+          sessionStorage.setItem('currentUser', JSON.stringify({
+            correo: userData.correo,
+            nombre: userData.nombre,
+            apellido: userData.apellido,
+            telefono: userData.telefono,
+            loginTime: new Date().toISOString()
+          }));
+          
+          window.location.href = "bienvenido.html";
+        } else {
+          alert('Contraseña incorrecta');
+        }
+        
+      } catch (error) {
+        console.error('Error en login manual:', error);
+        alert('Error al iniciar sesión: ' + error.message);
+      }
+    });
+  </script>
 </body>
 </html>
