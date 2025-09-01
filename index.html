@@ -21,7 +21,6 @@
       <h2>Inicio de sesión</h2>
 
       <button onclick="iniciarEscaneoFacial()">Iniciar escaneo facial</button>
-      <button onclick="mostrarFormulario()">Iniciar con correo y contraseña</button>
 
       <a href="registro.html">
         <button>👤 Registrarme</button>
@@ -95,25 +94,25 @@
     // Manejar login manual con formulario
     document.getElementById('emailLoginScreen').addEventListener('submit', async (e) => {
       e.preventDefault();
-      
+
       const formData = new FormData(e.target);
       const correo = formData.get('correo').trim();
       const contrasena = formData.get('contrasena').trim();
-      
+
       if (!correo || !contrasena) {
         alert('Por favor complete todos los campos');
         return;
       }
-      
+
       try {
         if (!db) await initIndexedDB();
-        
+
         const userData = await getFaceData(correo);
         if (!userData) {
           alert('Usuario no encontrado');
           return;
         }
-        
+
         if (userData.contrasena === contrasena) {
           // Login exitoso
           sessionStorage.setItem('currentUser', JSON.stringify({
@@ -126,7 +125,7 @@
             fechaRegistroFormateada: userData.fechaRegistroFormateada,
             loginTime: new Date().toISOString()
           }));
-          
+
           // También guardar en localStorage para persistencia
           localStorage.setItem('loggedUser', JSON.stringify({
             correo: userData.correo,
@@ -138,12 +137,12 @@
             fechaRegistroFormateada: userData.fechaRegistroFormateada,
             loginTime: new Date().toISOString()
           }));
-          
+
           window.location.href = "bienvenido.html";
         } else {
           alert('Contraseña incorrecta');
         }
-        
+
       } catch (error) {
         console.error('Error en login manual:', error);
         alert('Error al iniciar sesión: ' + error.message);
