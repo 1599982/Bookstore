@@ -105,10 +105,33 @@
        	background:rgba(0,0,0,0.7);
        	justify-content:center;
        	align-items:center;
-        z-index: 1;
+        z-index: 1000;
     }
-    .modal-content { background:#222; padding:20px; border-radius:10px; width:80%; box-shadow:0 0 30px rgba(255,165,0,0.3); }
+    .modal-content { 
+      background:#222; 
+      padding:20px; 
+      border-radius:10px; 
+      width:80%; 
+      max-width:900px;
+      max-height:90vh;
+      overflow-y:auto;
+      box-shadow:0 0 30px rgba(255,165,0,0.3); 
+    }
     .close { float:right; cursor:pointer; color:#ffa500; font-weight:bold; font-size:24px; }
+    .close:hover { color:#fff; }
+    
+    /* Estilos específicos para canvas del modal */
+    .modal-content canvas {
+      max-width: 100%;
+      height: auto;
+      margin: 20px 0;
+    }
+    
+    .modal-content h2 {
+      color: #ffa500;
+      text-align: center;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
@@ -117,7 +140,7 @@
     <header>
       <h1>Bookshop</h1>
       <nav>
-        <a href="#">Predicciones</a>
+        <a href="#" id="btnPredicciones">Predicciones</a>
         <a href="#" id="btnModal">Grafico estadísticos</a>
         <a href="../informacion/informacion.html">Cuenta</a>
       </nav>
@@ -137,12 +160,35 @@
     </main>
   </div>
 
-  <!-- Modal con gráfico -->
+  <!-- Modal con gráfico estadístico -->
   <div class="modal" id="modal">
     <div class="modal-content">
       <span class="close" id="close">&times;</span>
       <h2 style="color:#ffa500;">Comparación Precio, Marketing y Ventas</h2>
       <canvas id="grafico"></canvas>
+    </div>
+  </div>
+
+  <!-- Modal de Predicciones -->
+  <div class="modal" id="modalPredicciones">
+    <div class="modal-content">
+      <span class="close" id="closePredicciones">&times;</span>
+      <h2 style="color:#ffa500;">Predicciones de Ventas - Análisis Estadístico</h2>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+        <div style="background: rgba(255,165,0,0.1); padding: 15px; border-radius: 8px; width: 30%; text-align: center;">
+          <h3 style="color: #ffa500; margin-top: 0;">Tendencia General</h3>
+          <p id="tendenciaGeneral">Calculando...</p>
+        </div>
+        <div style="background: rgba(255,165,0,0.1); padding: 15px; border-radius: 8px; width: 30%; text-align: center;">
+          <h3 style="color: #ffa500; margin-top: 0;">Libro Más Vendido</h3>
+          <p id="libroMasVendido">Calculando...</p>
+        </div>
+        <div style="background: rgba(255,165,0,0.1); padding: 15px; border-radius: 8px; width: 30%; text-align: center;">
+          <h3 style="color: #ffa500; margin-top: 0;">ROI Marketing</h3>
+          <p id="roiMarketing">Calculando...</p>
+        </div>
+      </div>
+      <canvas id="graficoPredicciones"></canvas>
     </div>
   </div>
 
@@ -229,7 +275,219 @@ document.getElementById('btnModal').onclick = () => {
 };
 
 document.getElementById('close').onclick = () => { modal.style.display = 'none'; };
-window.onclick = e => { if (e.target == modal) modal.style.display = 'none'; };
+
+// Modal de Predicciones
+const modalPredicciones = document.getElementById('modalPredicciones');
+const graficoPrediccionesCanvas = document.getElementById('graficoPredicciones');
+let chartPredicciones;
+
+document.getElementById('btnPredicciones').onclick = () => {
+  modalPredicciones.style.display = 'flex';
+  
+  // Limpiar gráfico anterior si existe
+  if (chartPredicciones) { chartPredicciones.destroy(); }
+  
+  // Calcular estadísticas y predicciones
+  calcularEstadisticas();
+  crearGraficoPredicciones();
+};
+
+document.getElementById('closePredicciones').onclick = () => { 
+  modalPredicciones.style.display = 'none'; 
+};
+
+function calcularEstadisticas() {
+  const titulos = Object.keys(resumen);
+  
+  // 1. Tendencia general de ventas
+  let ventasTotales = 0;
+  let ventasByYear = { 2021: 0, 2022: 0, 2023: 0 };
+  
+  Papa.parse("ventas_libros.csv", {
+    download: true,
+    header: true,
+    complete: function(results) {
+      results.data.forEach(row => {
+        if (row.titulo && row.ventas && row.año) {
+          const ventas = parseInt(row.ventas);
+          const año = parseInt(row.año);
+          ventasTotales += ventas;
+          if (ventasByYear[año] !== undefined) {
+            ventasByYear[año] += ventas;
+          }
+        }
+      });
+      
+      // Calcular tendencia
+      const crecimiento2022 = ((ventasByYear[2022] - ventasByYear[2021]) / ventasByYear[2021] * 100).toFixed(1);
+      const crecimiento2023 = ((ventasByYear[2023] - ventasByYear[2022]) / ventasByYear[2022] * 100).toFixed(1);
+      
+      document.getElementById('tendenciaGeneral').innerHTML = `
+        <strong style="color: #27ae60;">↗ ${crecimiento2023}%</strong><br>
+        Crecimiento 2023
+      `;
+    }
+  });
+  
+  // 2. Libro más vendido
+  let maxVentas = 0;
+  let libroTop = '';
+  for (const titulo in resumen) {
+    if (resumen[titulo].ventas > maxVentas) {
+      maxVentas = resumen[titulo].ventas;
+      libroTop = titulo;
+    }
+  }
+  
+  document.getElementById('libroMasVendido').innerHTML = `
+    <strong style="color: #ffa500;">${libroTop}</strong><br>
+    ${maxVentas.toLocaleString()} unidades
+  `;
+  
+  // 3. ROI de Marketing
+  let totalMarketing = 0;
+  let totalIngresos = 0;
+  for (const titulo in resumen) {
+    totalMarketing += resumen[titulo].marketing;
+    totalIngresos += resumen[titulo].ventas * (resumen[titulo].precio / resumen[titulo].count);
+  }
+  
+  const roi = ((totalIngresos - totalMarketing) / totalMarketing * 100).toFixed(1);
+  
+  document.getElementById('roiMarketing').innerHTML = `
+    <strong style="color: ${roi > 0 ? '#27ae60' : '#e74c3c'};">${roi}%</strong><br>
+    Retorno inversión
+  `;
+}
+
+function crearGraficoPredicciones() {
+  // Datos para el gráfico de predicciones
+  const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  
+  // Simular predicciones basadas en datos históricos
+  const ventasPorMes = new Array(12).fill(0);
+  const marketingPorMes = new Array(12).fill(0);
+  const conteoMes = new Array(12).fill(0);
+  
+  Papa.parse("ventas_libros.csv", {
+    download: true,
+    header: true,
+    complete: function(results) {
+      results.data.forEach(row => {
+        if (row.mes && row.ventas && row.marketing) {
+          const mes = parseInt(row.mes) - 1; // Convertir a índice 0-11
+          const ventas = parseInt(row.ventas);
+          const marketing = parseInt(row.marketing);
+          
+          if (mes >= 0 && mes < 12) {
+            ventasPorMes[mes] += ventas;
+            marketingPorMes[mes] += marketing;
+            conteoMes[mes]++;
+          }
+        }
+      });
+      
+      // Calcular promedios
+      for (let i = 0; i < 12; i++) {
+        if (conteoMes[i] > 0) {
+          ventasPorMes[i] = Math.round(ventasPorMes[i] / conteoMes[i]);
+          marketingPorMes[i] = Math.round(marketingPorMes[i] / conteoMes[i]);
+        }
+      }
+      
+      // Generar predicciones para 2024 (con tendencia alcista del 15%)
+      const predicciones2024 = ventasPorMes.map(ventas => Math.round(ventas * 1.15));
+      
+      chartPredicciones = new Chart(graficoPrediccionesCanvas, {
+        type: 'line',
+        data: {
+          labels: meses,
+          datasets: [
+            {
+              label: 'Ventas Históricas (Promedio)',
+              data: ventasPorMes,
+              borderColor: '#3498db',
+              backgroundColor: 'rgba(52, 152, 219, 0.1)',
+              fill: true,
+              tension: 0.4
+            },
+            {
+              label: 'Predicción 2024',
+              data: predicciones2024,
+              borderColor: '#e74c3c',
+              backgroundColor: 'rgba(231, 76, 60, 0.1)',
+              fill: true,
+              tension: 0.4,
+              borderDash: [5, 5]
+            },
+            {
+              label: 'Inversión Marketing',
+              data: marketingPorMes,
+              borderColor: '#f39c12',
+              backgroundColor: 'rgba(243, 156, 18, 0.1)',
+              fill: false,
+              tension: 0.4,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          plugins: {
+            legend: {
+              labels: { color: '#ffa500' }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0,0,0,0.8)',
+              titleColor: '#ffa500',
+              bodyColor: '#fff'
+            }
+          },
+          scales: {
+            x: { 
+              ticks: { color: '#ffa500' },
+              grid: { color: 'rgba(255,165,0,0.2)' }
+            },
+            y: { 
+              type: 'linear',
+              display: true,
+              position: 'left',
+              ticks: { color: '#ffa500' },
+              grid: { color: 'rgba(255,165,0,0.2)' },
+              title: {
+                display: true,
+                text: 'Ventas (unidades)',
+                color: '#ffa500'
+              }
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              ticks: { color: '#f39c12' },
+              grid: { drawOnChartArea: false },
+              title: {
+                display: true,
+                text: 'Marketing ($)',
+                color: '#f39c12'
+              }
+            }
+          }
+        }
+      });
+    }
+  });
+}
+
+// Cerrar modales al hacer clic fuera
+window.onclick = e => { 
+  if (e.target == modal) modal.style.display = 'none';
+  if (e.target == modalPredicciones) modalPredicciones.style.display = 'none';
+};
 </script>
 
 
