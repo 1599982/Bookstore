@@ -230,6 +230,7 @@ async function registerUser() {
         }
 
         // Preparar datos completos del usuario incluyendo landmarks
+        const fechaRegistro = new Date();
         const completeUserData = {
             nombre: nombre,
             apellido: apellido,
@@ -237,6 +238,15 @@ async function registerUser() {
             correo: correo,
             contrasena: contrasena, // En producción, esto debería estar hasheado
             landmarks: lastLandmarks,
+            fechaRegistro: fechaRegistro.toISOString(),
+            fechaRegistroFormateada: fechaRegistro.toLocaleString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }),
             timestamp: new Date().toISOString()
         };
 
@@ -334,6 +344,8 @@ async function compararConBaseDatos() {
                     nombre: userData.nombre,
                     apellido: userData.apellido,
                     telefono: userData.telefono,
+                    fechaRegistro: userData.fechaRegistro,
+                    fechaRegistroFormateada: userData.fechaRegistroFormateada,
                     loginTime: new Date().toISOString()
                 }));
                 
@@ -343,6 +355,8 @@ async function compararConBaseDatos() {
                     nombre: userData.nombre,
                     apellido: userData.apellido,
                     telefono: userData.telefono,
+                    fechaRegistro: userData.fechaRegistro,
+                    fechaRegistroFormateada: userData.fechaRegistroFormateada,
                     loginTime: new Date().toISOString()
                 }));
 
@@ -444,6 +458,8 @@ async function loginUser() {
                 nombre: userData.nombre,
                 apellido: userData.apellido,
                 telefono: userData.telefono,
+                fechaRegistro: userData.fechaRegistro,
+                fechaRegistroFormateada: userData.fechaRegistroFormateada,
                 loginTime: new Date().toISOString()
             }));
             
@@ -453,6 +469,8 @@ async function loginUser() {
                 nombre: userData.nombre,
                 apellido: userData.apellido,
                 telefono: userData.telefono,
+                fechaRegistro: userData.fechaRegistro,
+                fechaRegistroFormateada: userData.fechaRegistroFormateada,
                 loginTime: new Date().toISOString()
             }));
             
