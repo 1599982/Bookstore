@@ -78,9 +78,18 @@ async function startCamera(){
 
 document.addEventListener("DOMContentLoaded", async () => {
     try {
+        console.log("Inicializando sistema...");
         await initIndexedDB();
         console.log("IndexedDB inicializado correctamente");
+
+        // Verificar que el store existe
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+            console.error("Object store no encontrado, reinicializando...");
+            await initIndexedDB();
+        }
+
         await startCamera();
+        console.log("Sistema completamente inicializado");
     } catch (err) {
         console.error("Error en la inicialización:", err);
         alert("Error accediendo a la cámara: " + err.message);
@@ -92,15 +101,15 @@ window.addEventListener('resize', () => { if(video.videoWidth) resizeCanvasToVid
 // Función para capturar foto del frame actual del video
 function capturarFotoActual() {
     if (!video || !video.videoWidth || !video.videoHeight) return null;
-    
+
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = video.videoWidth;
     tempCanvas.height = video.videoHeight;
     const tempCtx = tempCanvas.getContext('2d');
-    
+
     // Dibujar el frame actual del video
     tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
-    
+
     // Convertir a base64
     return tempCanvas.toDataURL('image/jpeg', 0.8);
 }
@@ -109,7 +118,7 @@ function capturarFotoActual() {
 // Configuración de IndexedDB
 // -------------------------------
 const DB_NAME = 'FaceRecognitionDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'faces';
 
 let db = null;
@@ -117,67 +126,146 @@ let db = null;
 // Inicializar IndexedDB
 function initIndexedDB() {
     return new Promise((resolve, reject) => {
+        // Cerrar conexión existente si la hay
+        if (db) {
+            db.close();
+            db = null;
+        }
+
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-        request.onerror = () => reject(request.error);
+        request.onerror = () => {
+            console.error('Error abriendo IndexedDB:', request.error);
+            reject(request.error);
+        };
+
         request.onsuccess = () => {
             db = request.result;
+            console.log('IndexedDB inicializado correctamente');
+
+            // Verificar que el store existe
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                console.error('Object store "faces" no encontrado');
+                // Intentar recrear la base de datos
+                db.close();
+                const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
+                deleteRequest.onsuccess = () => {
+                    console.log('Base de datos eliminada, reintentando...');
+                    setTimeout(() => initIndexedDB().then(resolve).catch(reject), 100);
+                };
+                deleteRequest.onerror = () => reject(new Error('No se pudo recrear la base de datos'));
+                return;
+            }
+
             resolve(db);
         };
 
         request.onupgradeneeded = (event) => {
             const database = event.target.result;
-            if (!database.objectStoreNames.contains(STORE_NAME)) {
-                database.createObjectStore(STORE_NAME, { keyPath: 'username' });
+            console.log('Actualizando base de datos...');
+
+            // Eliminar store existente si existe
+            if (database.objectStoreNames.contains(STORE_NAME)) {
+                database.deleteObjectStore(STORE_NAME);
             }
+
+            // Crear nuevo store
+            const store = database.createObjectStore(STORE_NAME, { keyPath: 'username' });
+            console.log('Object store "faces" creado correctamente');
+        };
+
+        request.onblocked = () => {
+            console.warn('IndexedDB bloqueado, cerrando otras conexiones...');
         };
     });
 }
 
 // Guardar datos de rostro en IndexedDB
 function saveFaceData(username, data) {
-    return new Promise((resolve, reject) => {
-        if (!db) {
-            reject(new Error('Base de datos no inicializada'));
-            return;
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Asegurar que la base de datos esté inicializada
+            if (!db) {
+                await initIndexedDB();
+            }
+
+            // Verificar que el store existe
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                await initIndexedDB();
+            }
+
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+
+            // Si data es un array (landmarks), crear estructura simple
+            // Si data es un objeto, usar los datos completos del usuario
+            const userData = Array.isArray(data) ? {
+                username: username,
+                landmarks: data,
+                timestamp: new Date().toISOString()
+            } : {
+                username: username,
+                ...data,
+                timestamp: data.timestamp || new Date().toISOString()
+            };
+
+            const request = store.put(userData);
+
+            request.onerror = () => {
+                console.error('Error guardando datos:', request.error);
+                reject(request.error);
+            };
+            request.onsuccess = () => {
+                console.log('Datos guardados correctamente para:', username);
+                resolve(request.result);
+            };
+
+            transaction.onerror = () => {
+                console.error('Error en transacción:', transaction.error);
+                reject(transaction.error);
+            };
+        } catch (error) {
+            console.error('Error en saveFaceData:', error);
+            reject(error);
         }
-
-        const transaction = db.transaction([STORE_NAME], 'readwrite');
-        const store = transaction.objectStore(STORE_NAME);
-
-        // Si data es un array (landmarks), crear estructura simple
-        // Si data es un objeto, usar los datos completos del usuario
-        const userData = Array.isArray(data) ? {
-            username: username,
-            landmarks: data,
-            timestamp: new Date().toISOString()
-        } : {
-            username: username,
-            ...data,
-            timestamp: data.timestamp || new Date().toISOString()
-        };
-
-        const request = store.put(userData);
-
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result);
     });
 }
 
 // Obtener datos de rostro de IndexedDB
 function getFaceData(username) {
-    return new Promise((resolve, reject) => {
-        if (!db) {
-            reject(new Error('Base de datos no inicializada'));
-            return;
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Asegurar que la base de datos esté inicializada
+            if (!db) {
+                await initIndexedDB();
+            }
+
+            // Verificar que el store existe
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                await initIndexedDB();
+            }
+
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.get(username);
+
+            request.onerror = () => {
+                console.error('Error obteniendo datos:', request.error);
+                reject(request.error);
+            };
+            request.onsuccess = () => {
+                console.log('Datos obtenidos para:', username, request.result ? 'ENCONTRADO' : 'NO ENCONTRADO');
+                resolve(request.result);
+            };
+
+            transaction.onerror = () => {
+                console.error('Error en transacción:', transaction.error);
+                reject(transaction.error);
+            };
+        } catch (error) {
+            console.error('Error en getFaceData:', error);
+            reject(error);
         }
-
-        const transaction = db.transaction([STORE_NAME], 'readonly');
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.get(username);
-
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result);
     });
 }
 
@@ -237,7 +325,11 @@ async function registerUser() {
     }
 
     try {
-        if (!db) await initIndexedDB();
+        // Asegurar que IndexedDB esté inicializada
+        if (!db) {
+            console.log("Inicializando IndexedDB para registro...");
+            await initIndexedDB();
+        }
 
         // Verificar si el usuario ya existe
         const existingUser = await getFaceData(correo);
@@ -247,7 +339,7 @@ async function registerUser() {
 
         // Capturar foto del último frame
         const fotoRegistro = capturarFotoActual();
-        
+
         // Preparar datos completos del usuario incluyendo landmarks
         const fechaRegistro = new Date();
         const completeUserData = {
@@ -369,7 +461,7 @@ async function compararConBaseDatos() {
                     fechaRegistroFormateada: userData.fechaRegistroFormateada,
                     loginTime: new Date().toISOString()
                 }));
-                
+
                 // También guardar en localStorage para persistencia
                 localStorage.setItem('loggedUser', JSON.stringify({
                     correo: userData.correo,
@@ -412,20 +504,109 @@ async function compararConBaseDatos() {
 
 // Función para obtener todos los usuarios de IndexedDB
 function obtenerTodosLosUsuarios() {
-    return new Promise((resolve, reject) => {
-        if (!db) {
-            reject(new Error('Base de datos no inicializada'));
-            return;
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Asegurar que la base de datos esté inicializada
+            if (!db) {
+                await initIndexedDB();
+            }
+
+            // Verificar que el store existe
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                await initIndexedDB();
+            }
+
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.getAll();
+
+            request.onerror = () => {
+                console.error('Error obteniendo todos los usuarios:', request.error);
+                reject(request.error);
+            };
+            request.onsuccess = () => {
+                const users = request.result || [];
+                console.log('Total usuarios encontrados:', users.length);
+                resolve(users);
+            };
+
+            transaction.onerror = () => {
+                console.error('Error en transacción:', transaction.error);
+                reject(transaction.error);
+            };
+        } catch (error) {
+            console.error('Error en obtenerTodosLosUsuarios:', error);
+            reject(error);
         }
-
-        const transaction = db.transaction([STORE_NAME], 'readonly');
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.getAll();
-
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result || []);
     });
 }
+
+// Función para limpiar y recrear IndexedDB
+function resetIndexedDB() {
+    return new Promise((resolve, reject) => {
+        // Cerrar conexión existente
+        if (db) {
+            db.close();
+            db = null;
+        }
+
+        // Eliminar base de datos existente
+        const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
+
+        deleteRequest.onsuccess = () => {
+            console.log('Base de datos eliminada correctamente');
+            // Reinicializar
+            initIndexedDB()
+                .then(() => {
+                    console.log('Base de datos recreada exitosamente');
+                    resolve();
+                })
+                .catch(reject);
+        };
+
+        deleteRequest.onerror = () => {
+            console.error('Error al eliminar base de datos');
+            reject(deleteRequest.error);
+        };
+
+        deleteRequest.onblocked = () => {
+            console.warn('Eliminación bloqueada, cerrando otras conexiones...');
+            setTimeout(() => {
+                resetIndexedDB().then(resolve).catch(reject);
+            }, 1000);
+        };
+    });
+}
+
+// Función de diagnóstico para IndexedDB
+function diagnosticarIndexedDB() {
+    console.log('=== DIAGNÓSTICO INDEXEDDB ===');
+    console.log('DB disponible:', db !== null);
+    console.log('DB_NAME:', DB_NAME);
+    console.log('DB_VERSION:', DB_VERSION);
+    console.log('STORE_NAME:', STORE_NAME);
+
+    if (db) {
+        console.log('Object stores disponibles:', Array.from(db.objectStoreNames));
+        console.log('Versión actual:', db.version);
+        console.log('Store "faces" existe:', db.objectStoreNames.contains(STORE_NAME));
+    }
+
+    // Probar acceso básico
+    if (db && db.objectStoreNames.contains(STORE_NAME)) {
+        try {
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            console.log('Transacción creada correctamente');
+        } catch (error) {
+            console.error('Error creando transacción:', error);
+        }
+    }
+    console.log('=== FIN DIAGNÓSTICO ===');
+}
+
+// Hacer funciones disponibles globalmente para debugging
+window.resetIndexedDB = resetIndexedDB;
+window.diagnosticarIndexedDB = diagnosticarIndexedDB;
 
 // Función para detener el escaneo
 function detenerEscaneo() {
@@ -485,7 +666,7 @@ async function loginUser() {
                 fechaRegistroFormateada: userData.fechaRegistroFormateada,
                 loginTime: new Date().toISOString()
             }));
-            
+
             // También guardar en localStorage para persistencia
             localStorage.setItem('loggedUser', JSON.stringify({
                 correo: userData.correo,
@@ -497,7 +678,7 @@ async function loginUser() {
                 fechaRegistroFormateada: userData.fechaRegistroFormateada,
                 loginTime: new Date().toISOString()
             }));
-            
+
             // También guardar en localStorage para persistencia
             localStorage.setItem('loggedUser', JSON.stringify({
                 correo: userData.correo,
