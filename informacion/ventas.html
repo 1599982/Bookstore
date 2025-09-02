@@ -132,6 +132,13 @@
       text-align: center;
       margin-bottom: 20px;
     }
+
+    #graficoPiePredicciones {
+      width: 550px !important;
+      height: 550px !important;
+      display: block;
+      margin: 0 auto;
+    }
   </style>
 </head>
 <body>
@@ -189,12 +196,18 @@
         </div>
       </div>
       <canvas id="graficoPredicciones"></canvas>
+      <!-- Nuevo canvas para el gráfico Pie -->
+      <h2 style="color:#ffa500;">Distribución de Ventas por Libro (Pie)</h2>
+      <canvas id="graficoPiePredicciones"></canvas>
     </div>
   </div>
 
 <script>
 const tbody = document.querySelector('#tabla tbody');
 let resumen = {};
+
+const graficoPiePrediccionesCanvas = document.getElementById('graficoPiePredicciones');
+let chartPiePredicciones;
 
 // Leer CSV
 Papa.parse("ventas_libros.csv", {
@@ -283,13 +296,11 @@ let chartPredicciones;
 
 document.getElementById('btnPredicciones').onclick = () => {
   modalPredicciones.style.display = 'flex';
-  
-  // Limpiar gráfico anterior si existe
   if (chartPredicciones) { chartPredicciones.destroy(); }
-  
-  // Calcular estadísticas y predicciones
+  if (chartPiePredicciones) { chartPiePredicciones.destroy(); }
   calcularEstadisticas();
   crearGraficoPredicciones();
+  crearGraficoPiePredicciones(); // Llama a la función para el Pie
 };
 
 document.getElementById('closePredicciones').onclick = () => { 
@@ -358,6 +369,29 @@ function calcularEstadisticas() {
     <strong style="color: ${roi > 0 ? '#27ae60' : '#e74c3c'};">${roi}%</strong><br>
     Retorno inversión
   `;
+}
+
+function crearGraficoPiePredicciones() {
+  const titulos = Object.keys(resumen);
+  const ventas = titulos.map(t => resumen[t].ventas);
+
+  chartPiePredicciones = new Chart(graficoPiePrediccionesCanvas, {
+    type: 'pie',
+    data: {
+      labels: titulos,
+      datasets: [{
+        label: 'Ventas por Libro',
+        data: ventas,
+        backgroundColor: titulos.map((_, i) => `hsl(${i * 360 / titulos.length}, 70%, 55%)`)
+      }]
+    },
+    options: {
+      responsive: false,
+      plugins: {
+        legend: { labels: { color: '#ffa500' } }
+      }
+    }
+  });
 }
 
 function crearGraficoPredicciones() {
