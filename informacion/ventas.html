@@ -88,6 +88,7 @@
       font-size: 16px;
       position: sticky;
       top: 0;
+      cursor: pointer;
       z-index: 1;
     }
     tr:nth-child(even) { background: rgba(44, 32, 6, 0.2); }
@@ -158,7 +159,12 @@
         <table id="tabla">
           <thead>
             <tr>
-              <th>Mes</th><th>Año</th><th>Título</th><th>Precio</th><th>Marketing</th><th>Ventas</th>
+              <th onclick="ordenarTabla(0)">Mes</th>
+              <th onclick="ordenarTabla(1)">Año</th>
+              <th onclick="ordenarTabla(2)">Título</th>
+              <th onclick="ordenarTabla(3)">Precio</th>
+              <th onclick="ordenarTabla(4)">Marketing</th>
+              <th onclick="ordenarTabla(5)">Ventas</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -515,6 +521,36 @@ function crearGraficoPredicciones() {
       });
     }
   });
+}
+
+let ordenAscendente = [true, true, true, true, true, true];
+
+function ordenarTabla(columna) {
+  const tabla = document.getElementById('tabla');
+  const filas = Array.from(tabla.tBodies[0].rows);
+
+  filas.sort((a, b) => {
+    let valA = a.cells[columna].innerText;
+    let valB = b.cells[columna].innerText;
+
+    // Si es número, comparar como número
+    if (columna >= 3) {
+      valA = parseFloat(valA.replace(/[^0-9.-]+/g,"")) || 0;
+      valB = parseFloat(valB.replace(/[^0-9.-]+/g,"")) || 0;
+    }
+
+    if (valA < valB) return ordenAscendente[columna] ? -1 : 1;
+    if (valA > valB) return ordenAscendente[columna] ? 1 : -1;
+    return 0;
+  });
+
+  // Alternar orden para la próxima vez
+  ordenAscendente[columna] = !ordenAscendente[columna];
+
+  // Limpiar y volver a agregar filas ordenadas
+  const tbody = tabla.tBodies[0];
+  tbody.innerHTML = '';
+  filas.forEach(fila => tbody.appendChild(fila));
 }
 
 // Cerrar modales al hacer clic fuera
